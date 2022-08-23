@@ -89,11 +89,8 @@ simply change `--data_setting 10` to `--data_setting 'standard'`.
     CUDA_VISIBLE_DEVICES=0 python src/train_adv_supervised_segmentation_triplet.py --json_config_path ./config/ACDC/1500_epoch/MICCAI2022_MaxStyle.json --cval 0 --seed 40 --data_setting 'standard' --auto_test
     ```
 ### Prostate image segmentation (70 subjects)
-Simply change the config files to those under `/vol/biomedic3/cc215/Project/MaxStyle/config/Prostate`
 Before running, please make sure the root path in the configuration file has been changed to your local path:
 i.e., "root_dir": "path/to/prostate_multi_domain_data/reorganized/G-MedicalDecathlon",
-
-change the `
 - Standard training:
     ```
     cd path/to/MaxStyle
@@ -105,8 +102,9 @@ change the `
     ```
     CUDA_VISIBLE_DEVICES=0 python src/train_adv_supervised_segmentation_triplet.py --json_config_path ./config/Prostate/MICCAI2022_MaxStyle.json  --cval 0 --seed 40 --data_setting 'all' --auto_test
     ```
+
 # Evaluation
-By default, we run model evaluation automatically after training with `--auto-test`. To re-run inference of a trained model without training, simply run the same training command with additional `--no_train` option on:
+By default, we run model evaluation automatically after training with `--auto-test`. Model parameters and results will all be saved under `saved/`. To re-run inference of a trained model without training, simply run the same training command with additional `--no_train` option on:
 ```python
 CUDA_VISIBLE_DEVICES=<gpu id> python src/train_adv_supervised_segmentation_triplet.py --cval <cval id> --seed <seed number> --data_setting <data setting identifier> --json_config_path <path/to/json_config_file> --data_setting 10 --auto_test --no_train ;
 ```
@@ -141,7 +139,7 @@ Note: 6066 is a port number, which can be changed to other numbers.
     - `train_adv_supervised_segmentation_triplet.py`: code for training and testing
 - `saved`: contains saved checkpoints and test scores and log files (will appear after training)
    e.g.
-   - `train_ACDC_10_n_cls_4/ACDC/1500_epoch/MICCAI2022_MaxStyle/0/model/best/checkpoints`: contains csv files with model performance (trained on ACDC dataset using 10 subjects for 1500 epochs) evaludated on different testsets (only exists after testing). e.g. 
+   - `train_ACDC_10_n_cls_4/ACDC/1500_epoch/MICCAI2022_MaxStyle/0/model/best/checkpoints`: contains csv files reporting model performance. Here, the model was trained on ACDC dataset using 10 subjects for 1500 epochs and then evaludated on different testsets (only exists after testing). e.g. 
         - saved params: `image_decoder.pth`, `image_encoder.pth`, `segmentation_decoder.pth`
         - patient wise scores (Dice):`report/<dataset name>/<iter_1_detailed.csv>`
         - Average Dice scores for each dataset: `report/<dataset name>/<iter_1_summary.csv>`
