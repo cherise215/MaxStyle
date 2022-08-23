@@ -65,16 +65,16 @@ Once downloaded, unzip it and put files under the `MaxStyle/data` dir, you can f
     cd path/to/MaxStyle
     cd /vol/biomedic3/cc215/Project/MaxStyle;
     source activate <your virtual env>;
-    CUDA_VISIBLE_DEVICES=0 python src/train_adv_supervised_segmentation_triplet.py --json_config_path ./config/ACDC/1500_epoch/standard_training.json --cval 0 --seed 40 --data_setting 10 --auto_test
+    CUDA_VISIBLE_DEVICES=0 python src/train_adv_supervised_segmentation_triplet.py --json_config_path ./config/ACDC/1500_epoch/standard_training.json --cval 0 --seed 40 --data_setting 10 --auto_test --log
     ```
 - MaxStyle training with a dual-branch network
     ```
-    CUDA_VISIBLE_DEVICES=0 python src/train_adv_supervised_segmentation_triplet.py --json_config_path ./config/ACDC/1500_epoch/MICCAI2022_MaxStyle.json --cval 0 --seed 40 --data_setting 10 --auto_test
+    CUDA_VISIBLE_DEVICES=0 python src/train_adv_supervised_segmentation_triplet.py --json_config_path ./config/ACDC/1500_epoch/MICCAI2022_MaxStyle.json --cval 0 --seed 40 --data_setting 10 --auto_test --log
     ```
 We also provide other baseline methods: Adversarial bias field and Latent space masking based data augmentation
 ```
-   CUDA_VISIBLE_DEVICES=0 python src/train_adv_supervised_segmentation_triplet.py --json_config_path ./config/ACDC/1500_epoch/MICCAI2020_AdvBias.json --cval 0 --seed 40 --data_setting 10 --auto_test
-```
+   CUDA_VISIBLE_DEVICES=0 python src/train_adv_supervised_segmentation_triplet.py --json_config_path ./config/ACDC/1500_epoch/MICCAI2020_AdvBias.json --cval 0 --seed 40 --data_setting 10 --auto_test --log
+``` 
 ### Cardiac high-data regime segmentation (70 subjects)
 simply change `--data_setting 10` to `--data_setting 'standard'`.
 - Standard training:
@@ -82,11 +82,11 @@ simply change `--data_setting 10` to `--data_setting 'standard'`.
     cd path/to/MaxStyle
     cd /vol/biomedic3/cc215/Project/MaxStyle;
     source activate <your virtual env>;
-    CUDA_VISIBLE_DEVICES=0 python src/train_adv_supervised_segmentation_triplet.py --json_config_path ./config/ACDC/1500_epoch/standard_training.json --cval 0 --seed 40 --data_setting 'standard' --auto_test
+    CUDA_VISIBLE_DEVICES=0 python src/train_adv_supervised_segmentation_triplet.py --json_config_path ./config/ACDC/1500_epoch/standard_training.json --cval 0 --seed 40 --data_setting 'standard' --auto_test --log
     ```
 - MaxStyle training with a dual-branch network
     ```
-    CUDA_VISIBLE_DEVICES=0 python src/train_adv_supervised_segmentation_triplet.py --json_config_path ./config/ACDC/1500_epoch/MICCAI2022_MaxStyle.json --cval 0 --seed 40 --data_setting 'standard' --auto_test
+    CUDA_VISIBLE_DEVICES=0 python src/train_adv_supervised_segmentation_triplet.py --json_config_path ./config/ACDC/1500_epoch/MICCAI2022_MaxStyle.json --cval 0 --seed 40 --data_setting 'standard' --auto_test --log
     ```
 ### Prostate image segmentation
 Before running, please make sure the root path in the configuration file has been changed to your local path:
@@ -96,15 +96,15 @@ i.e., "root_dir": "path/to/prostate_multi_domain_data/reorganized/G-MedicalDecat
     cd path/to/MaxStyle
     cd /vol/biomedic3/cc215/Project/MaxStyle;
     source activate <your virtual env>;
-    CUDA_VISIBLE_DEVICES=0 python src/train_adv_supervised_segmentation_triplet.py --json_config_path ./config/Prostate/standard_training.json --cval 0 --seed 40 --data_setting 'all' --auto_test
+    CUDA_VISIBLE_DEVICES=0 python src/train_adv_supervised_segmentation_triplet.py --json_config_path ./config/Prostate/standard_training.json --cval 0 --seed 40 --data_setting 'all' --auto_test --log
     ```
 - MaxStyle training with a dual-branch network
     ```
-    CUDA_VISIBLE_DEVICES=0 python src/train_adv_supervised_segmentation_triplet.py --json_config_path ./config/Prostate/MICCAI2022_MaxStyle.json  --cval 0 --seed 40 --data_setting 'all' --auto_test
+    CUDA_VISIBLE_DEVICES=0 python src/train_adv_supervised_segmentation_triplet.py --json_config_path ./config/Prostate/MICCAI2022_MaxStyle.json  --cval 0 --seed 40 --data_setting 'all' --auto_test --log
     ```
 
 # Evaluation
-By default, we run model evaluation automatically after training with `--auto-test`. Model parameters and results will all be saved under `saved/`. To re-run inference of a trained model without training, simply run the same training command with additional `--no_train` option on:
+By default, we run model evaluation automatically after training with `--auto_test` option turned on. Model parameters and results will all be saved under `saved/`. To re-run inference of a trained model without training, simply run the same training command with additional `--no_train` option on:
 ```python
 CUDA_VISIBLE_DEVICES=<gpu id> python src/train_adv_supervised_segmentation_triplet.py --cval <cval id> --seed <seed number> --data_setting <data setting identifier> --json_config_path <path/to/json_config_file> --data_setting 10 --auto_test --no_train ;
 ```
