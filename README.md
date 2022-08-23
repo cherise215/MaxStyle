@@ -88,7 +88,7 @@ simply change `--data_setting 10` to `--data_setting 'standard'`.
     ```
     CUDA_VISIBLE_DEVICES=0 python src/train_adv_supervised_segmentation_triplet.py --json_config_path ./config/ACDC/1500_epoch/MICCAI2022_MaxStyle.json --cval 0 --seed 40 --data_setting 'standard' --auto_test
     ```
-### Prostate image segmentation (70 subjects)
+### Prostate image segmentation
 Before running, please make sure the root path in the configuration file has been changed to your local path:
 i.e., "root_dir": "path/to/prostate_multi_domain_data/reorganized/G-MedicalDecathlon",
 - Standard training:
