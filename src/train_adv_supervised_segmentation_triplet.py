@@ -191,60 +191,6 @@ def train_network(experiment_name, dataset,
                 loss_dict['loss/standard/shape'] += shape_recon_loss.item()
                 loss_dict['loss/standard/gt_shape'] += gt_recon_loss.item()
 
-                if adv_bias:
-                    # MICCAI 2020 paper: adversarial bias field
-                    # load_parameters:
-                    print ("adv bias field augmentation")
-                    downscale =int(image_l.size(2)/(2*32))
-                    bias_magnitude = get_value_from_dict(experiment_opt['adv_bias'],"magnitude",0.3)  if adv_bias else 0.0 
-                    augmentor_function = AdvBias(
-                                        config_dict={'epsilon': bias_magnitude,
-                                                        'control_point_spacing':
-                                                        [image_l.size(2) // 2, image_l.size(3) // 2],
-                                                        'downscale': downscale,
-                                                        'data_size':
-                                                        [image_l.size(0), image_l.size(1),
-                                                        image_l.size(2), image_l.size(3)],
-                                                        'interpolation_order': 3,
-                                                        'init_mode': 'random',
-                                                        'space': 'log'}, 
-                                        debug=debug)
-             
-                    transformation_chain = [augmentor_function]
-                    segmentation_solver.reset_all_optimizers()
-                    adv_solver = ComposeAdversarialTransformSolver(
-                        chain_of_transforms=transformation_chain,
-                        divergence_types=['kl', 'contour'],
-                        divergence_weights= [1.0, 0.5],
-                        use_gpu=use_gpu,
-                        debug=True,
-                        if_norm_image=False,
-                    )
-                    print ("here")
-                    adv_solver.train()
-                    adv_solver.adversarial_training(
-                        data=image_l, model=segmentation_solver,
-                        init_output = p0.detach().clone(),
-                        n_iter=1,
-                        lazy_load=[False],
-                        optimize_flags=[True], power_iteration=[False])
-                    adv_solver.eval()
-                    aug_image = adv_solver.forward(image_l)
-                    print ('augmented image shape: ', aug_image.size())
-                    torch.cuda.empty_cache()
-                    segmentation_solver.train()
-                    segmentation_solver.zero_grad()
-                  
-                    l_seg_1, l_rec, l_shape_1, l_shape_2 = segmentation_solver.hard_example_traininng(perturbed_image=aug_image, perturbed_seg=None, clean_image_l=clean_image_l, label_l=label_l,
-                                                                                standard_input_image=image_l.detach().clone(), standard_recon_image=easy_recon_image)
-                    adv_loss = l_rec + l_seg_1 + l_shape_1+l_shape_2
-                    loss_dict['loss/hard/total'] += adv_loss.item()
-                    loss_dict['loss/hard/seg'] += l_seg_1.item()
-                    loss_dict['loss/hard/image'] += l_rec.item()
-                    loss_dict['loss/hard/shape'] += (l_shape_1+l_shape_2).item()
-                else:
-                    adv_loss = torch.tensor(0., device=device)
-
                 if latent_DA:
                     # MICCAI 2021 paper: latent space masking-based
                     # load_parameters:
