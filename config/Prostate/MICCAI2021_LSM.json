@@ -1,7 +1,7 @@
 {
   "name": "standard_training",
   "data": {
-    "root_dir": "/vol/biomedic3/cc215/data/prostate_multi_domain_data/reorganized/G-MedicalDecathlon",
+    "root_dir": "./data/MICCAI2022_multi_site_prostate_dataset/reorganized/G-MedicalDecathlon",
     "dataset_name": "Prostate",
     "image_size": [
       288,
