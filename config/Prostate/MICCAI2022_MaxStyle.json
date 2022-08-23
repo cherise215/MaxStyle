@@ -1,0 +1,70 @@
+{
+  "name": "standard_training",
+  "data": {
+    "root_dir": "./data/MICCAI2022_multi_site_prostate_dataset/reorganized/G-MedicalDecathlon",
+    "dataset_name": "Prostate",
+    "image_size": [
+      288,
+      288,
+      1
+    ],
+    "label_size": [
+      288,
+      288
+    ],
+    "pad_size": [
+      288,
+      288,
+      1
+    ],
+    "crop_size": [
+      224,
+      224,
+      1
+    ],
+    "data_aug_policy": "Prostate_affine_elastic_intensity",
+    "image_format_name": "{pid}/t2_img_clipped.nii.gz",
+    "label_format_name": "{pid}/label_clipped.nii.gz",
+    "num_classes": 3,
+    "use_cache": true,
+    "keep_orig_image_label_pair_for_training": true
+  },
+  "segmentation_model": {
+    "network_type": "FCN_16_standard_no_STN",
+    "num_classes": 2
+  },
+  "learning": {
+    "max_style": true,
+    "latent_DA": false,
+    "separate_training": false,
+    "lr": 0.0001,
+    "n_epochs": 600,
+    "max_iteration": 50000,
+    "batch_size": 20,
+    "use_gpu": true,
+    "optimizer_type":"AdamW"
+  },
+  "max_style": {
+    "mix_style": true,
+    "no_noise": false,
+    "lr": 0.1,
+    "n_iter": 5,
+    "mix_learnable": true,
+    "noise_learnable": true,
+    "decoder_layers_indexes": [
+      3,
+      4,
+      5
+    ],
+    "loss_types": [
+      "seg"
+    ],
+    "loss_weights": [
+      1
+    ],
+    "always_use_beta": true 
+  },
+  "output": {
+    "save_epoch_every_num_epochs": 100
+  }
+}

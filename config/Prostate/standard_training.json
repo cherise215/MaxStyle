@@ -1,0 +1,49 @@
+{
+  "name": "standard_training",
+  "data": {
+    "root_dir": "/vol/biomedic3/cc215/data/prostate_multi_domain_data/reorganized/G-MedicalDecathlon",
+    "dataset_name": "Prostate",
+    "image_size": [
+      288,
+      288,
+      1
+    ],
+    "label_size": [
+      288,
+      288
+    ],
+    "pad_size": [
+      288,
+      288,
+      1
+    ],
+    "crop_size": [
+      224,
+      224,
+      1
+    ],
+    "data_aug_policy": "Prostate_affine_elastic_intensity",
+    "image_format_name": "{pid}/t2_img_clipped.nii.gz",
+    "label_format_name": "{pid}/label_clipped.nii.gz",
+    "num_classes": 3,
+    "use_cache": true,
+    "keep_orig_image_label_pair_for_training": true
+  },
+  "segmentation_model": {
+    "network_type": "FCN_16_standard_no_STN",
+    "num_classes": 2
+  },
+  "learning": {
+    "separate_training": true,
+    "lr": 0.0001,
+    "n_epochs": 1500,
+    "max_iteration": 50000,
+    "batch_size": 20,
+    "use_gpu": true,
+    "optimizer_type":"AdamW"
+
+  },
+  "output": {
+    "save_epoch_every_num_epochs": 100
+  }
+}

@@ -1,0 +1,58 @@
+{
+  "name": "standard training",
+  "data": {
+    "dataset_name": "ACDC",
+    "root_dir": "/vol/biomedic3/cc215/data/ACDC/preprocessed",
+    "frame": [
+      "ES",
+      "ED"
+    ],
+    "image_size": [
+      224,
+      224,
+      1
+    ],
+    "label_size": [
+      224,
+      224
+    ],
+    "pad_size": [
+      224,
+      224,
+      1
+    ],
+    "crop_size": [
+      192,
+      192,
+      1
+    ],
+    "new_spacing":[1.36719, 1.36719, -1],
+    "data_aug_policy": "ACDC_affine_elastic_intensity",
+    "image_format_name": "{pid}_img.nrrd",
+    "label_format_name": "{pid}_seg.nrrd",
+    "intensity_norm_type":"min_max",
+    "num_classes": 4,
+    "use_cache": true,
+    "keep_orig_image_label_pair_for_training": true,
+    "myocardium_only": false,
+    "right_ventricle_only": false
+  },
+  "segmentation_model": {
+    "network_type": "FCN_16_standard_no_STN",
+    "num_classes": 4
+  },
+  "learning": {
+    "max_style": false,
+    "latent_DA": false,
+    "separate_training": true,
+    "lr": 0.0001,
+    "n_epochs": 1500,
+    "max_iteration": 50000,
+    "batch_size": 20,
+    "use_gpu": true
+  },
+
+  "output": {
+    "save_epoch_every_num_epochs": 100
+  }
+}

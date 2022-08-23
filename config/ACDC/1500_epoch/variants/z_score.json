@@ -1,0 +1,79 @@
+{
+  "name": "MaxStyle training",
+  "data": {
+    "dataset_name": "ACDC",
+    "root_dir": "/vol/biomedic3/cc215/data/ACDC/preprocessed",
+    "frame": [
+      "ES",
+      "ED"
+    ],
+    "image_size": [
+      224,
+      224,
+      1
+    ],
+    "label_size": [
+      224,
+      224
+    ],
+    "pad_size": [
+      224,
+      224,
+      1
+    ],
+    "crop_size": [
+      192,
+      192,
+      1
+    ],
+    "data_aug_policy": "ACDC_affine_elastic_intensity",
+    "image_format_name": "{pid}_img.nrrd",
+    "label_format_name": "{pid}_seg.nrrd",
+    "num_classes": 4,
+    "use_cache": true,
+    "intensity_norm_type":"z_score",
+    "keep_orig_image_label_pair_for_training": true,
+    "myocardium_only": false,
+    "right_ventricle_only": false
+  },
+  "segmentation_model": {
+    "network_type": "FCN_16_standard_no_STN",
+    "num_classes": 4
+  },
+  "learning": {
+    "max_style": false,
+    "latent_DA": false,
+    "separate_training": true,
+    "lr": 0.0001,
+    "n_epochs": 1500,
+    "max_iteration": 50000,
+    "batch_size": 20,
+    "use_gpu": true,
+    "optimizer_type":"AdamW"
+
+  },
+  "max_style": {
+    "mix_style": true,
+    "no_noise": false,
+    "lr": 0.1,
+    "n_iter": 5,
+    "mix_learnable": true,
+    "noise_learnable": true,
+    "decoder_layers_indexes": [
+      3,
+      4,
+      5
+    ],
+    "loss_types": [
+      "seg"
+    ],
+    "loss_weights": [
+      1
+      
+    ],
+    "always_use_beta": false
+  },
+  "output": {
+    "save_epoch_every_num_epochs": 100
+  }
+}
