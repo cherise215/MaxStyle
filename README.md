@@ -12,6 +12,12 @@ Core implementations of this paper can be found at:
 - Code for generating and optimizing style augmentation at training can be found at [src/models/advanced_triplet_recon_segmentation_model.py](MaxStyle/src/models/advanced_triplet_recon_segmentation_model.py), see generate_max_style_image(). 
 - Main training and testing code: [src/train_adv_supervised_segmentation_triplet.py](src/train_adv_supervised_segmentation_triplet.py) 
 
+## News:
+- [x] MaxStyle training and testing code release [2022-8-23]
+
+Incoming:
+- [ ] Add jupyter notebook for ease of result analysis
+- [ ] Add visualization of MaxStyle generated images
 
 ## Set Up
 - Git clone this project
