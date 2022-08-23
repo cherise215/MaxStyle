@@ -7,9 +7,9 @@ MaxStyle is a novel feature-space data augmentation, which maximizes the effecti
 Where to insert MaxStyle? Well, MaxStyle can be inserted after any conv blocks in a neural network, preferred to be applied to augmenting *low-level* features. In order to directly visualize the effect of MaxStyle and use it for standard image space data augmentation, in the paper, we design an auxiliary style-augmented image decoder. This decoder is attached to a segmentation network, turning the network to a dual-branch network for both image segmentation and image reconstruction/style augmentation. We found such a design can improve not only the interpretability of feture augmentation, but also the robustness of the segmentation network. We recommend to randomly insert MaxStyle in the low-level feature output from the decoder, e.g., insert MaxStyle after the last 1 st, 2nd, 3rd blocks.
 
 Core implementations of this paper can be found at: 
-- MaxStyle layer with learnable paprameters for smart style pertubation: [src/advanced/maxstyle.py](MaxStyle/src/advanced/maxstyle.py).
-- An example of an image decoder with MaxStyle layers inserted [src/models/ebm/encoder_decoder.py](MaxStyle/src/models/ebm/encoder_decoder.py), see MyDecoder.apply_max_style().
-- Code for generating and optimizing style augmentation at training can be found at [src/models/advanced_triplet_recon_segmentation_model.py](MaxStyle/src/models/advanced_triplet_recon_segmentation_model.py), see generate_max_style_image(). 
+- MaxStyle layer with learnable paprameters for smart style pertubation: [src/advanced/maxstyle.py](src/advanced/maxstyle.py).
+- An example of an image decoder with MaxStyle layers inserted [src/models/ebm/encoder_decoder.py](src/models/ebm/encoder_decoder.py), see MyDecoder.apply_max_style().
+- Code for generating and optimizing style augmentation at training can be found at [src/models/advanced_triplet_recon_segmentation_model.py](src/models/advanced_triplet_recon_segmentation_model.py), see generate_max_style_image(). 
 - Main training and testing code: [src/train_adv_supervised_segmentation_triplet.py](src/train_adv_supervised_segmentation_triplet.py) 
 
 ## News:
