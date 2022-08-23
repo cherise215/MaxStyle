@@ -44,13 +44,13 @@ Once downloaded, unzip it and put files under the `MaxStyle/data` dir, you can f
  - MaxStyle/data/MICCAI2022_multi_site_prostate_dataset/reorganized
     - A-ISBI
         - patient_1 
-            -t2_img_clipped.nii.gz
-            -label_clipped.nii.gz
+            - t2_img_clipped.nii.gz
+            - label_clipped.nii.gz
         ...
     - B-ISBI_1.5
         - patient_1 
-            -t2_img_clipped.nii.gz
-            -label_clipped.nii.gz
+            - t2_img_clipped.nii.gz
+            - label_clipped.nii.gz
         ...
     - C-I2CVB
     - D-UCL
