@@ -127,7 +127,6 @@ def train_network(experiment_name, dataset,
 
    ##########latent DA and cooperative training config############
     latent_DA = get_value_from_dict(experiment_opt['learning'],"latent_DA",False)
-    adv_bias = get_value_from_dict(experiment_opt['learning'],"adv_bias",False)    
     ## MaxStyle switch:
     max_style = get_value_from_dict(experiment_opt['learning'],"max_style",False)
 
@@ -194,18 +193,18 @@ def train_network(experiment_name, dataset,
                 if latent_DA:
                     # MICCAI 2021 paper: latent space masking-based
                     # load_parameters:
-                    print('latent code masking configurations')
+                    # print('latent code masking configurations')
                     latentDA_config = experiment_opt['latent_DA']
                     if 'image code' in latentDA_config["mask_scope"]:
                         gen_corrupted_image = True
                         corrupted_image_DA_config = latentDA_config["image code"]
-                        print(latentDA_config["image code"])
+                        # print(latentDA_config["image code"])
                     else:
                         corrupted_image_DA_config = None
                         gen_corrupted_image = False
                     if 'shape code' in latentDA_config["mask_scope"]:
                         gen_corrupted_seg = True
-                        print(latentDA_config["shape code"])
+                        # print(latentDA_config["shape code"])
                         corrupted_seg_DA_config = latentDA_config["shape code"]
                     else:
                         corrupted_seg_DA_config = None
@@ -279,7 +278,7 @@ def train_network(experiment_name, dataset,
                 else:
                     max_style_loss = torch.tensor(0., device=device)
 
-                loss = standard_loss + adv_loss + LDA_loss + max_style_loss
+                loss = standard_loss  + LDA_loss + max_style_loss
                 segmentation_solver.reset_all_optimizers()
                 loss.backward()
                 segmentation_solver.optimize_all_params()
