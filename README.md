@@ -67,7 +67,7 @@ Once downloaded, unzip it and put files under the `MaxStyle/data` dir, you can f
     source activate <your virtual env>;
     CUDA_VISIBLE_DEVICES=0 python src/train_adv_supervised_segmentation_triplet.py --json_config_path ./config/ACDC/1500_epoch/standard_training.json --cval 0 --seed 40 --data_setting 10 --auto_test --log
     ```
-- MaxStyle training with a dual-branch network
+- MaxStyle training 
     ```
     CUDA_VISIBLE_DEVICES=0 python src/train_adv_supervised_segmentation_triplet.py --json_config_path ./config/ACDC/1500_epoch/MICCAI2022_MaxStyle.json --cval 0 --seed 40 --data_setting 10 --auto_test --log
     ```
@@ -84,7 +84,7 @@ simply change `--data_setting 10` to `--data_setting 'standard'`.
     source activate <your virtual env>;
     CUDA_VISIBLE_DEVICES=0 python src/train_adv_supervised_segmentation_triplet.py --json_config_path ./config/ACDC/1500_epoch/standard_training.json --cval 0 --seed 40 --data_setting 'standard' --auto_test --log
     ```
-- MaxStyle training with a dual-branch network
+- MaxStyle training 
     ```
     CUDA_VISIBLE_DEVICES=0 python src/train_adv_supervised_segmentation_triplet.py --json_config_path ./config/ACDC/1500_epoch/MICCAI2022_MaxStyle.json --cval 0 --seed 40 --data_setting 'standard' --auto_test --log
     ```
@@ -98,7 +98,7 @@ i.e., "root_dir": "path/to/prostate_multi_domain_data/reorganized/G-MedicalDecat
     source activate <your virtual env>;
     CUDA_VISIBLE_DEVICES=0 python src/train_adv_supervised_segmentation_triplet.py --json_config_path ./config/Prostate/standard_training.json --cval 0 --seed 40 --data_setting 'all' --auto_test --log
     ```
-- MaxStyle training with a dual-branch network
+- MaxStyle training 
     ```
     CUDA_VISIBLE_DEVICES=0 python src/train_adv_supervised_segmentation_triplet.py --json_config_path ./config/Prostate/MICCAI2022_MaxStyle.json  --cval 0 --seed 40 --data_setting 'all' --auto_test --log
     ```
