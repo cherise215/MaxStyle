@@ -126,7 +126,7 @@ i.e., "root_dir": "path/to/prostate_multi_domain_data/reorganized/G-MedicalDecat
     CUDA_VISIBLE_DEVICES=0 python src/train_adv_supervised_segmentation_triplet.py --json_config_path ./config/Prostate/MICCAI2022_MaxStyle.json  --cval 0 --seed 40 --data_setting 'all' --auto_test --log
     ```
 # Improved reproducibility with fixed seeds and training sets
-Our code by default support to train models with fixed random seed an training set for reduced result variability. Of note, completely reproducible results are not guaranteed due to the nature of the PyTorch Design and GPU computation. One can change the `seed` and `cval` value in the above commands to train models with different set-ups for multiple runs. In our experiments for cardiac low-data regime training, we ran training three times,  considering three configurations:
+Our code by default supports to train models with fixed random seed and a fixed selection of training set for controlled study. Of note, completely reproducible results are not guaranteed due to the nature of the PyTorch Design and GPU computation. One can change the `seed` and `cval` value in the above commands to train models with different set-ups for multiple runs and get an average score for model evaluation. In our experiments for cardiac low-data regime training, we ran training three times and reported average Dice scores of them. Specifically, we used three configurations:
 
 A. --cval 0 --seed 40
 
