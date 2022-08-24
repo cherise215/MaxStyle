@@ -129,7 +129,7 @@ Note: 6066 is a port number, which can be changed to other numbers.
 # Project structure and core files
 - `config`: folder contains configuration for training deep learning models
     - ACDC: folder contains configurations for training cardiac segmentation using ACDC training data
-    - Prostate: folder contains configurations for training cardiac segmentation using ACDC training data
+    - Prostate: folder contains configurations for training prostate segmentation using medical decathlon training data
 - `src`: main code repository
     - `advanced`: contains implementation of advanced data augmentation
         - maxstyle.py: max style layer implementation
