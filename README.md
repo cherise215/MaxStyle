@@ -6,6 +6,9 @@ MaxStyle is a novel feature-space data augmentation, which maximizes the effecti
 
 Where to insert MaxStyle? Well, MaxStyle can be inserted after any conv blocks in a neural network, preferred to be applied to augmenting *low-level* features. In order to directly visualize the effect of MaxStyle and use it for standard image space data augmentation, in the paper, we design an auxiliary style-augmented image decoder. This decoder is attached to a segmentation network, turning the network to a dual-branch network for both image segmentation and image reconstruction/style augmentation. We found such a design can improve not only the interpretability of feture augmentation, but also the robustness of the segmentation network. We recommend to randomly insert MaxStyle in the low-level feature output from the decoder, e.g., insert MaxStyle after the last 1 st, 2nd, 3rd blocks.
 
+
+[Full paper](https://arxiv.org/abs/2206.01737)
+
 Core implementation can be found at: 
 - MaxStyle layer with learnable paprameters for smart style pertubation: [src/advanced/maxstyle.py](src/advanced/maxstyle.py).
 - An example of an image decoder with MaxStyle layers inserted [src/models/ebm/encoder_decoder.py](src/models/ebm/encoder_decoder.py), see MyDecoder.apply_max_style().
@@ -70,16 +73,6 @@ Once downloaded, unzip it and put files under the `MaxStyle/data` dir, you can f
     - `models`: folder contains different basic neural nets and advanced neural networks 
         - advanced_triplet_recon_segmentation_model.py: dual-branch network implementation supports hard example training from latent space data augmentation
     - `train_adv_supervised_segmentation_triplet.py`: code for training and testing
-- `saved`: contains saved checkpoints and test scores and log files (will appear after training)
-   e.g.
-   - `train_ACDC_10_n_cls_4/ACDC/1500_epoch/MICCAI2022_MaxStyle/0/model/best/checkpoints`: contains csv files reporting model performance. Here, the model was trained on ACDC dataset using 10 subjects for 1500 epochs and then evaludated on different testsets (only exists after testing). e.g. 
-        - saved params: `image_decoder.pth`, `image_encoder.pth`, `segmentation_decoder.pth`
-        - patient wise scores (Dice):`report/<dataset name>/<iter_1_detailed.csv>`
-        - Average Dice scores for each dataset: `report/<dataset name>/<iter_1_summary.csv>`
-        - Summary report contains scores for all test sets: `report/dataset_summary.csv`
-   -  `train_ACDC_10_n_cls_4/ACDC/1500_epoch/MICCAI2022_MaxStyle/0/model/best/testing_segmentation_results/Seg_plots.png`: visualiztion of model prediction on validation set.
-   - `train_ACDC_10_n_cls_4/config/ACDC/1500_epoch/MICCAI2022_MaxStyle/log`: contains training log file for tensorboard visualization
-
 
 ## Training: Standard training with a dual-branch network
 ### Cardiac low-data regime segmentation (10 subjects)
@@ -112,7 +105,7 @@ simply change `--data_setting 10` to `--data_setting 'standard'`.
     CUDA_VISIBLE_DEVICES=0 python src/train_adv_supervised_segmentation_triplet.py --json_config_path ./config/ACDC/1500_epoch/MICCAI2022_MaxStyle.json --cval 0 --seed 40 --data_setting 'standard' --auto_test --log
     ```
 ### Prostate image segmentation
-Before running, please make sure the root path in the configuration file has been changed to your local path:
+Before running, please make sure the root path in the configuration file (e.g. config/Prostate/standard_training.json) has been changed to your local path:
 i.e., "root_dir": "path/to/prostate_multi_domain_data/reorganized/G-MedicalDecathlon",
 - Standard training:
     ```
@@ -134,6 +127,12 @@ B. --cval 1 --seed 20
 
 C. --cval 2 --seed 10
 
+## Visualization of loss curves and training progress:
+```python
+cd path/to/MaxStyle;
+tensorboard --logdir ./saved --port 6066 --bind_all
+```
+Note: 6066 is a port number, which can be changed to other numbers. 
 
 # Evaluation
 By default, we run model evaluation automatically after training with `--auto_test` option turned on. Model parameters and results will all be saved under `saved/`. To re-run inference of a trained model without training, simply run the same training command with additional `--no_train` option on:
@@ -151,12 +150,16 @@ This will auto test the model saved with the highest validation accuracy during 
 CUDA_VISIBLE_DEVICES=0 python src/train_adv_supervised_segmentation_triplet.py --cval 0 --seed 40 --json_config_path ./config/ACDC/1500_epoch/MICCAI2022_MaxStyle.json --log --data_setting 10 --no_train --use_last_epoch;
 ```
 
-## Visualization of loss curves and training progress:
-```python
-cd path/to/MaxStyle;
-tensorboard --logdir ./saved --port 6066 --bind_all
-```
-Note: 6066 is a port number, which can be changed to other numbers. 
+Once finished, reports will be auto generated under the folder `saved`.
+- `saved`: contains saved checkpoints and test scores and log files (will appear after training).  They will be saved in a format like: 
+    - model checkpoints: `saved/{experiment_name}/<dataset name>/<method>/<cval_id>/model/best/checkpoints/`.
+    - report: `saved/{experiment_name}/<dataset name>/<method>/<cval_id>/model/best/checkpoints/report`.
+   e.g.
+        - `train_ACDC_10_n_cls_4/ACDC/1500_epoch/MICCAI2022_MaxStyle/0/model/best/checkpoints`: contains csv files reporting model performance. Here, the model was trained on ACDC dataset using 10 subjects for 1500 epochs and then evaludated on different testsets (only exists after testing). e.g. 
+            - saved params: `image_decoder.pth`, `image_encoder.pth`, `segmentation_decoder.pth`
+            - patient wise scores (Dice):`report/<dataset name>/<iter_1_detailed.csv>`
+            - Average Dice scores for each dataset: `report/<dataset name>/<iter_1_summary.csv>`
+            - Summary report contains scores for all test sets: `report/dataset_summary.csv`
 
 
 # Citation
