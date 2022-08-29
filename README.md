@@ -11,8 +11,8 @@ Where to insert MaxStyle? Well, MaxStyle can be inserted after any conv blocks i
 
 Core implementation can be found at: 
 - MaxStyle layer with learnable paprameters for smart style pertubation: [src/advanced/maxstyle.py](src/advanced/maxstyle.py).
-- An example of an image decoder with MaxStyle layers inserted [src/models/ebm/encoder_decoder.py](src/models/ebm/encoder_decoder.py), see MyDecoder.apply_max_style().
-- Code for generating and optimizing style augmentation at training can be found at [src/models/advanced_triplet_recon_segmentation_model.py](src/models/advanced_triplet_recon_segmentation_model.py), see generate_max_style_image(). 
+- An example of an image decoder with MaxStyle layers inserted, see [MyDecoder.apply_max_style](https://github.com/cherise215/MaxStyle/blob/main/src/models/ebm/encoder_decoder.py#L598).
+- Code for generating and optimizing style augmentation at training can be found at [src/models/advanced_triplet_recon_segmentation_model.py](https://github.com/cherise215/MaxStyle/blob/6dcdc5c1cef368f4b6b857738a92620ef425bba5/src/train_adv_supervised_segmentation_triplet.py#L253). 
 - Main training and testing code: [src/train_adv_supervised_segmentation_triplet.py](src/train_adv_supervised_segmentation_triplet.py) 
 
 ## News:
