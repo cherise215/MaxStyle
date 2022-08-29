@@ -35,7 +35,6 @@
     "num_classes": 2
   },
   "learning": {
-    "max_style": false,
     "latent_DA": true,
     "separate_training": true,
     "lr": 0.0001,

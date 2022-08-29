@@ -35,8 +35,7 @@
   },
   "learning": {
     "max_style": true,
-    "latent_DA": false,
-    "separate_training": false,
+    "separate_training": true,
     "lr": 0.0001,
     "n_epochs": 600,
     "max_iteration": 50000,
