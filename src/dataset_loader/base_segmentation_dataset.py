@@ -352,9 +352,11 @@ class BaseSegDataset(Dataset):
 
         image, label, sitkImage, sitkLabel = self.load_patientImage_from_nrrd(
             self.pid,new_spacing=new_spacing, normalize=self.normalize) ## 3D subject level normalization
-        ## update voxel spacing here
-        if new_spacing is None:
+        # ## update voxel spacing here
+        if self.new_spacing is None:
             self.voxel_spacing = sitkImage.GetSpacing()
+        else:
+            self.voxel_spacing = self.new_spacing
         if crop_size is not None:
             image, label, h_s, w_s, h, w = crop_or_pad(image, crop_size, label=label)
         image_tensor = torch.from_numpy(image[:, np.newaxis, :, :]).float()
@@ -366,7 +368,7 @@ class BaseSegDataset(Dataset):
             'image': image_tensor,
             'label': label_tensor,
             'pid': self.pid,
-            'new_spacing':self.voxel_spacing}
+            'new_spacing':new_spacing}
 
     def get_id(self):
         '''
