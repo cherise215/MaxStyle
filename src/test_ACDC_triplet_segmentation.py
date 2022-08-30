@@ -8,7 +8,6 @@ from scipy import stats
 import numpy as np
 import sys
 
-# sys.path.append('/vol/biomedic3/cc215/Project/MedSeg/')
 sys.path.append('.')
 
 from src.models.advanced_triplet_recon_segmentation_model import AdvancedTripletReconSegmentationModel
@@ -23,10 +22,9 @@ from src.common_utils.basic_operations import check_dir
 
 pad_size = [224, 224, 1]
 crop_size = [192, 192, 1]
-# new_spacing = [1.36719, 1.36719, -1]
 
 
-def get_testset(test_dataset_name, test_root_dir="",frames=['ED', 'ES'],new_spacing = [1.36719, 1.36719, -1],intensity_norm_type='min_max'):
+def get_testset(test_dataset_name, test_root_dir="",frames=['ED', 'ES'],new_spacing = [1.36719, 1.36719, -1],normalize=True,intensity_norm_type='min_max'):
     data_aug_policy_name = 'no_aug'
     tr = Transformations(data_aug_policy_name=data_aug_policy_name, pad_size=pad_size,
                          crop_size=crop_size).get_transformation()
@@ -47,7 +45,7 @@ def get_testset(test_dataset_name, test_root_dir="",frames=['ED', 'ES'],new_spac
                                                   data_setting_name='10', formalized_label_dict=formalized_label_dict,
                                                   subset_name=frame, split='test', myocardium_seg=False,
                                                   right_ventricle_seg=False,
-                                                  new_spacing=None, normalize=False,intensity_norm_type=intensity_norm_type)
+                                                  new_spacing=new_spacing,intensity_norm_type=intensity_norm_type)
             elif test_dataset_name == 'MM':
                 root_dir = '/vol/biomedic3/cc215/data/MICCAI2021_multi_domain_robustness_datasets/MM'
                 IMAGE_FORMAT_NAME = '{pid}/' + frame + '_img.nii.gz'
@@ -57,7 +55,7 @@ def get_testset(test_dataset_name, test_root_dir="",frames=['ED', 'ES'],new_spac
                                                   idx2cls_dict=IDX2CLASS_DICT,
                                                   image_format_name=IMAGE_FORMAT_NAME,
                                                   label_format_name=LABEL_FORMAT_NAME,
-                                                   new_spacing=None, normalize=False,intensity_norm_type=intensity_norm_type) # disable it when data has been preprocessed
+                                                   new_spacing=new_spacing,intensity_norm_type=intensity_norm_type) # disable it when data has been preprocessed
 
             elif test_dataset_name in ['RandomGhosting', 'RandomBias', 'RandomSpike', 'RandomMotion']:
                 root_folder = '/vol/biomedic3/cc215/data/ACDC/ACDC_artefacted/{}'.format(test_dataset_name)
@@ -69,7 +67,7 @@ def get_testset(test_dataset_name, test_root_dir="",frames=['ED', 'ES'],new_spac
                                                   idx2cls_dict=IDX2CLASS_DICT,
                                                   image_format_name=IMAGE_FORMAT_NAME,
                                                   label_format_name=LABEL_FORMAT_NAME,
-                                                  new_spacing=None, normalize=False,intensity_norm_type=intensity_norm_type)  # disable it when data has been preprocessed
+                                                  new_spacing=new_spacing,intensity_norm_type=intensity_norm_type)  # disable it when data has been preprocessed
 
             else:
                 raise NotImplementedError
@@ -93,7 +91,7 @@ def get_testset(test_dataset_name, test_root_dir="",frames=['ED', 'ES'],new_spac
                                           idx2cls_dict=IDX2CLASS_DICT,
                                           image_format_name=IMAGE_FORMAT_NAME,
                                           label_format_name=LABEL_FORMAT_NAME,
-                                           new_spacing=None, normalize=False,intensity_norm_type=intensity_norm_type)  # disable it when data has been preprocessed
+                                           new_spacing=new_spacing,intensity_norm_type=intensity_norm_type)  # disable it when data has been preprocessed
 
         testset_list.append(test_dataset)
     elif 'MnM-2' == test_dataset_name:
@@ -107,7 +105,7 @@ def get_testset(test_dataset_name, test_root_dir="",frames=['ED', 'ES'],new_spac
                                               idx2cls_dict=IDX2CLASS_DICT,
                                               image_format_name=IMAGE_FORMAT_NAME,
                                               label_format_name=LABEL_FORMAT_NAME,
-                                               new_spacing=None, normalize=False,intensity_norm_type=intensity_norm_type)  # disable it when data has been preprocessed to save time
+                                               new_spacing=new_spacing,intensity_norm_type=intensity_norm_type)  # disable it when data has been preprocessed to save time
 
             testset_list.append(test_dataset)
     elif 'UKBB' == test_dataset_name:
@@ -121,7 +119,7 @@ def get_testset(test_dataset_name, test_root_dir="",frames=['ED', 'ES'],new_spac
                                               idx2cls_dict=IDX2CLASS_DICT,
                                               image_format_name=IMAGE_FORMAT_NAME,
                                               label_format_name=LABEL_FORMAT_NAME,
-                                              new_spacing=None, normalize=False,intensity_norm_type=intensity_norm_type)  # disable it when data has been preprocessed to save time
+                                              new_spacing=new_spacing,intensity_norm_type=intensity_norm_type)  # disable it when data has been preprocessed to save time
 
             testset_list.append(test_dataset)
     else:
@@ -150,7 +148,7 @@ def evaluate(method_name, segmentation_model, maximum_batch_size, test_dataset_n
         summary_report_file_name = 'iter_{}_summary.csv'.format(n_iter)
         detailed_report_file_name = 'iter_{}_detailed.csv'.format(n_iter)
 
-    test_dataset = get_testset(test_dataset_name,test_root_dir=test_root_dir, frames=frames,new_spacing=new_spacing,intensity_norm_type=intensity_norm_type)
+    test_dataset = get_testset(test_dataset_name,test_root_dir=test_root_dir, frames=frames,new_spacing=None,intensity_norm_type=intensity_norm_type)
     tester = TestSegmentationNetwork(test_dataset=test_dataset,
                                      crop_size=crop_size,
                                      maximum_batch_size=maximum_batch_size, segmentation_model=segmentation_model, use_gpu=True,
