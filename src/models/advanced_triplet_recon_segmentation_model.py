@@ -27,10 +27,11 @@ from src.models.custom_loss import CustomNormalizedCrossCorrelationLoss, NGF_Los
 from src.models.custom_layers import BatchInstanceNorm2d
 
 from src.common_utils.metrics import runningScore
-from src.common_utils.basic_operations import construct_input, set_grad, rescale_intensity
+from src.common_utils.basic_operations import construct_input, intensity_norm_fn_selector, set_grad
 from src.common_utils.save import save_testing_images_results
 from src.common_utils.data_structure import MaxStack, Dictate
 from src.common_utils.uncertainty import cal_batch_entropy_maps
+from src.common_utils.basic_operations import rescale_intensity, z_score_intensity
 
 from src.advanced.mixstyle import MixStyle
 from src.advanced.mixup import ManifoldMixup
@@ -306,7 +307,12 @@ class AdvancedTripletReconSegmentationModel(nn.Module):
                 model_dict[module_name] = module
         return model_dict
     
-    def run(self, input, disable_track_bn_stats=False):
+    def run(self, input, disable_track_bn_stats=False, normalize_input=False):
+        if normalize_input:
+            if self.intensity_norm_type == 'min_max':
+                input =rescale_intensity(input, 0,1)
+            elif self.intensity_norm_type == 'z_score':
+                input = z_score_intensity(input)
         (latent_code_i, latent_code_s), init_predict = self.fast_predict(
             input, disable_track_bn_stats=disable_track_bn_stats)
         self.z_i = latent_code_i
@@ -431,11 +437,11 @@ class AdvancedTripletReconSegmentationModel(nn.Module):
         x = self.decoder_inference(decoder_name='image_decoder', latent_code=z_i, disable_track_bn_stats=disable_track_bn_stats)
         return x
 
-    def forward(self, input, disable_track_bn_stats=False):
+    def forward(self, input, disable_track_bn_stats=False,normalize_input=False):
         '''
         predict fast segmentation (FTN)
         '''
-        zs, predict = self.fast_predict(input, disable_track_bn_stats)
+        recon, predict, refined_predict = self.run(input, disable_track_bn_stats=disable_track_bn_stats,normalize_input=normalize_input)
         return predict
 
     def eval(self):
@@ -620,7 +626,49 @@ class AdvancedTripletReconSegmentationModel(nn.Module):
         torch.cuda.empty_cache()
         return masked_latent_code, mask
 
-    def predict(self, input, softmax=False, n_iter=None):
+    
+    def generate_style_augmented_latent_code(self, image, layers_indexes=[1, 2, 3], lmda=None, mix='random', p=0.5):
+        '''
+        perform style interpolation at intermediate layers in encoders:
+        reference: Mixstyle ICLR 2021
+        '''
+        x = image.detach().clone()
+        if self.network_type.startswith('Unet'):
+            encoder_function = self.model['image_encoder']
+        else: 
+            encoder_function = self.model['image_encoder'].general_encoder
+
+        mixstyle = MixStyle(p=p, alpha=0.1, lmda=lmda, mix=mix)
+        # original mixstyle code: https://github.com/KaiyangZhou/mixstyle-release
+        # mixstyle after the activation layers.
+        with _disable_tracking_bn_stats(encoder_function):
+            x1 = encoder_function.inc(x)
+            x1 = F.leaky_relu(x1, negative_slope=0.2)
+            if 1 in layers_indexes:
+                x1 = mixstyle(x1)
+            x2 = encoder_function.down1(x1)
+            if 2 in layers_indexes:
+                x2 = mixstyle(x2)
+            x3 = encoder_function.down2(x2)
+            if 3 in layers_indexes:
+                x3 = mixstyle(x3)
+            x4 = encoder_function.down3(x3)
+            if 4 in layers_indexes:
+                x4 = mixstyle(x4)
+            x5 = encoder_function.down4(x4)
+            if 5 in layers_indexes:
+                x5 = mixstyle(x5)
+            z = encoder_function.final_conv(x5)
+            if encoder_function.act is not None:
+                z = encoder_function.act(z)
+            if 6 in layers_indexes:
+                z = mixstyle(z)
+       
+        z_i, z_s = self.filter_code(z, True)
+        return z_i, z_s
+    
+    
+    def predict(self, input,  softmax=False, n_iter=None,normalize_input= True):
         if n_iter is None:
             n_iter = self.n_iter
         else:
@@ -629,13 +677,12 @@ class AdvancedTripletReconSegmentationModel(nn.Module):
         self.eval()
        
         with torch.inference_mode():
-            if  'no_STN' in self.network_type or n_iter <= 1:
-                (zi,zs), pred = self.fast_predict(input)
-            elif n_iter == 2:
-                recon_image, init_predict, pred = self.run(input)
-            else:
-                raise ValueError
+            rec_image, pred, ref_predict = self.run(input,normalize_input=normalize_input)
 
+        if  'no_STN' in self.network_type or n_iter <= 1:
+            pred = pred.detach().clone()
+        else:
+            pred = ref_predict.detach().clone()
         if softmax:
             pred = torch.softmax(pred, dim=1)
         torch.cuda.empty_cache()
@@ -774,7 +821,6 @@ class AdvancedTripletReconSegmentationModel(nn.Module):
             perturbed_image_0 = self.decoder_inference(decoder=self.model['image_decoder'],
                                                        latent_code=perturbed_z_i_0, eval=False, disable_track_bn_stats=True)
             perturbed_image_0 = perturbed_image_0.detach().clone()
-            perturbed_image_0 = rescale_intensity(perturbed_image_0, 0, 1)
 
         if gen_corrupted_seg:
             self.reset_all_optimizers()
@@ -817,7 +863,12 @@ class AdvancedTripletReconSegmentationModel(nn.Module):
             domain_id = 0
 
         if perturbed_image is not None:
-            # w. corrupted image
+            if self.intensity_norm_type == 'min_max':
+                perturbed_image =rescale_intensity(perturbed_image, 0,1)
+            elif self.intensity_norm_type == 'z_score':
+                perturbed_image = z_score_intensity(perturbed_image)           
+             # w. corrupted image
+            perturbed_image = perturbed_image.detach().clone()
             # perturbed_image = makeVariable(perturbed_image.detach().clone(), use_gpu=use_gpu, type='float')
             seg_loss, recon_loss, _, shape_loss = self.standard_training(clean_image_l=clean_image_l, label_l=label_l,
                                                                          perturbed_image=perturbed_image, compute_gt_recon=False, update_latent=False,
@@ -857,12 +908,6 @@ class AdvancedTripletReconSegmentationModel(nn.Module):
             z_i, z_s = self.encode_image(input, domain_id, disable_track_bn_stats=disable_track_bn_stats)
             y_0 =self.decoder_inference(decoder=self.model['segmentation_decoder'], latent_code=z_s, disable_track_bn_stats=disable_track_bn_stats) 
         return (z_i, z_s), y_0
-
-    def predict_w_reconstructed_image(self, image, domain_id=0):
-        image_recon = self.recon_image(image, domain_id=domain_id)
-        assert image_recon is not None, 'recon image is none'
-        (zi, zs), pred = self.fast_predict(image_recon)
-        return pred
 
     def evaluate(self, input, targets_npy, n_iter=None):
         '''

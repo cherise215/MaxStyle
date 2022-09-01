@@ -90,12 +90,24 @@ class MixStyle(nn.Module):
                     perm_a = perm_a[torch.randperm(B // 2)]
                     perm = torch.cat([perm_b, perm_a], 0)
                     mu2, sig2 = mu[perm], sig[perm]
+            mu_mix = mu * (1 - lmda) + mu2 * lmda
+            sig_mix = sig * (1 - lmda) + sig2 * lmda
+            self.perm = perm
+            # print(perm)
+            return x_normed * sig_mix + mu_mix
+        elif self.mix == 'gaussian':
+            ## DSU: adding gaussian noise
+            gaussian_mu = torch.randn(B, C, 1, 1, device=x.device) * torch.std(mu, dim=0, keepdim=True)
+            gaussian_mu.requires_grad = False
+            gaussian_std = torch.randn(B, C, 1, 1, device=x.device) * torch.std(sig, dim=0, keepdim=True)
+            gaussian_std.requires_grad = False
+            mu_mix = mu + gaussian_mu
+            sig_mix = sig + gaussian_std
+            return x_normed * sig_mix + mu_mix
         else:
             raise NotImplementedError
 
         
-        mu_mix = mu * (1 - lmda) + mu2 * lmda
-        sig_mix = sig * (1 - lmda) + sig2 * lmda
-        self.perm = perm
-        # print(perm)
-        return x_normed * sig_mix + mu_mix
+       
+
+

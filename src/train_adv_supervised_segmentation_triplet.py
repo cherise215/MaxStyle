@@ -38,6 +38,11 @@ from src.advanced.random_window_masking import random_inpainting, random_outpain
 from src.test_ACDC_triplet_segmentation import evaluate as cardiac_evaluate
 from src.test_prostate_segmentation import evaluate as prostate_evaluate
 
+import sys
+sys.path.append('./advchain')  # noqa
+from advchain.augmentor import ComposeAdversarialTransformSolver, AdvBias, AdvNoise
+
+
 def seed_worker(worker_id=0):
     worker_seed = torch.initial_seed() % 2**32
     np.random.seed(worker_seed)
@@ -125,11 +130,15 @@ def train_network(experiment_name, dataset,
     if log:
         writer = SummaryWriter(log_dir=log_dir, purge_step=start_epoch)
 
-   ##########latent DA and cooperative training config############
+   ##########advanced DA and cooperative training config############
     latent_DA = get_value_from_dict(experiment_opt['learning'],"latent_DA",False)
-    ## MaxStyle switch:
     max_style = get_value_from_dict(experiment_opt['learning'],"max_style",False)
-
+    rand_conv = get_value_from_dict(experiment_opt['learning'],"rand_conv",False)
+    RSC = get_value_from_dict(experiment_opt['learning'],"RSC",False)
+    mix_style = get_value_from_dict(experiment_opt['learning'],"mix_style",False)
+    DSU = get_value_from_dict(experiment_opt['learning'],"DSU",False)
+    adv_noise = get_value_from_dict(experiment_opt['learning'],"adv_noise",False)
+    adv_bias = get_value_from_dict(experiment_opt['learning'],"adv_bias",False)
 
     # =========================<<<<<start training>>>>>>>>=============================>
     stop_flag = False
@@ -141,8 +150,7 @@ def train_network(experiment_name, dataset,
     g_count = 0
     total_loss = 0.
     loss_keys = ['loss/standard/total', 'loss/standard/seg', 'loss/standard/image', 'loss/standard/shape', 'loss/standard/gt_shape',
-                'loss/hard/total', 'loss/hard/seg', 'loss/hard/image', 'loss/hard/shape',
-                ]
+                'loss/hard/total', 'loss/hard/seg', 'loss/hard/image', 'loss/hard/shape','loss/hard/rand_conv', 'loss/hard/RSC','loss/hard/mix_style', 'loss/hard/DSU', 'loss/hard/adv_noise', 'loss/hard/adv_bias']
     loss_dict = {}
     for key in loss_keys:
         loss_dict[key] = torch.tensor(0., device=device)
@@ -277,8 +285,251 @@ def train_network(experiment_name, dataset,
                     loss_dict['loss/hard/shape'] += (l_shape_1+l_shape_2).item()
                 else:
                     max_style_loss = torch.tensor(0., device=device)
+                
+                if rand_conv:
+                    # apply randconv to input image three times
+                    # [ICLR'21] Robust and Generalizable Visual Representation Learning via Random Convolutions
+                    # https://openreview.net/pdf?id=BVSM0x3EDK6
+                    recon_predictions, initial_predicts, final_predicts = [], [], []
+                    for i in range(3):
+                        aug_image = RandConvAug().transform(input_image=image_l)
+                        recon_image, init_predict, refined_predict = segmentation_solver.run(aug_image,normalize_input=True)
+                        recon_predictions.append(recon_image)
+                        initial_predicts.append(F.softmax(init_predict, dim=1))
+                        final_predicts.append(F.softmax(refined_predict, dim=1))
+                    # average prediction
+                    # average_image = sum(recon_predictions) / 3.0
+                    # reference code: https://github.com/google-research/augmix/blob/master/cifar.py
+                    average_FTN_log = torch.clamp(sum(initial_predicts) / 3.0, 1e-8, 1).log()
+                    c = num_classes
+                    average_FTN_log = average_FTN_log.transpose(1, 2).transpose(2, 3).contiguous().view(-1, c)
+               
+                        # compute JS-like loss 1/3(KL(p1|p_mean)+ KL(p2|p_mean)+ KL(p3|p_mean))
+                    rand_conv_loss = 0.
+                    lamda = 10  # as suggested in the original paper
+                    for rec, predict, stn_predict in zip(recon_predictions, initial_predicts, final_predicts):
+                        l_rec = segmentation_solver.compute_image_recon_loss(rec, clean_image_l.detach())
+                        # KL(P|P_mean)
+                        predict = predict.transpose(1, 2).transpose(2, 3).contiguous().view(-1, c)
+                        l_seg_1 = lamda * F.kl_div(average_FTN_log, predict, reduction='batchmean')
 
-                loss = standard_loss  + LDA_loss + max_style_loss
+                        if not 'no_STN' in segmentation_solver.network_type:
+                            average_STN_log = torch.clamp(sum(final_predicts) / 3.0, 1e-8, 1).log()
+                            average_STN_log = average_STN_log.transpose(1, 2).transpose(2, 3).contiguous().view(-1, c)
+                            stn_predict = stn_predict.transpose(1, 2).transpose(2, 3).contiguous().view(-1, c)
+                            l_shape_1 = lamda * F.kl_div(average_STN_log, stn_predict, reduction='batchmean')
+                        else:
+                            l_shape_1= 0
+
+                        rand_conv_loss += l_rec + l_seg_1 + l_shape_1
+                    rand_conv_loss /= 3.0
+                    loss_dict['loss/hard/rand_conv'] += rand_conv_loss.item()
+                else:
+                    rand_conv_loss = torch.tensor(0., device=device)
+                
+                if RSC:
+                    # RSC loss: use targeted hard masking for regularization
+                    RSC_threshold = 1.0 / 3
+                    perturbed_z_i_0, img_code_mask = segmentation_solver.perturb_latent_code(latent_code=z_i,
+                                                                                             label_y=clean_image_l,
+                                                                                             perturb_type='RSC',
+                                                                                             decoder_function=segmentation_solver.model['image_decoder'],
+                                                                                             loss_type='corr',  # make it consistent with original paper
+                                                                                             threshold=RSC_threshold,
+                                                                                             random_threshold=False,
+                                                                                             if_detach=False, if_soft=False)
+                    perturbed_z_s_0, shape_code_mask = segmentation_solver.perturb_latent_code(latent_code=z_s,
+                                                                                               label_y=label_l,
+                                                                                               perturb_type='RSC',
+                                                                                               decoder_function=segmentation_solver.model[
+                                                                                                   'segmentation_decoder'],
+                                                                                               loss_type='corr',  # make it consistent with original paper
+                                                                                               threshold=RSC_threshold,
+                                                                                               random_threshold=False,
+                                                                                               if_detach=False, if_soft=False)
+                    ## force to predict seg with corrupted shape code
+                    segmentation_logit = segmentation_solver.decoder_inference(decoder=segmentation_solver.model['segmentation_decoder'],
+                                                                latent_code=z_s * shape_code_mask, eval=False, disable_track_bn_stats=True)
+
+                    l_seg_2 = cross_entropy_2D(input=segmentation_logit,
+                                               target=label_l.detach(), weight=segmentation_solver.class_weights)
+                    
+                    ## force to recon image and predict seg with corrupted image code
+                    recon_image = segmentation_solver.decoder_inference(decoder= segmentation_solver.model['image_decoder'], latent_code = z_i * img_code_mask,eval=False, disable_track_bn_stats=True)
+                    l_rec_reg = segmentation_solver.compute_image_recon_loss(recon_image, clean_image_l.detach().clone())
+
+                    latent_code_i, new_z_s = segmentation_solver.filter_code(z_i * img_code_mask,disable_track_bn_stats=True)
+                    segmentation_logit_1 = segmentation_solver.decoder_inference(decoder=segmentation_solver.model['segmentation_decoder'],
+                                                                latent_code  = new_z_s, eval=False, disable_track_bn_stats=True)
+
+                    l_seg_reg = cross_entropy_2D(segmentation_logit_1,
+                                               target=label_l.detach(), weight=segmentation_solver.class_weights)
+                  
+
+                    if not 'no_STN' in segmentation_solver.network_type:
+                        refined_predict = segmentation_solver.recon_shape(segmentation_logit, image=image_l, is_label_map=False,recon_image=easy_recon_image,disable_track_bn_stats=True)
+                        l_shape_correct = cross_entropy_2D(refined_predict,
+                                                            target=label_l.detach(), weight=segmentation_solver.class_weights)
+                   
+                        refined_segmentation_1 = segmentation_solver.recon_shape(
+                            segmentation_logit_1, imgae=image_l,recon_image=recon_image,is_label_map=False, disable_track_bn_stats=True)
+
+                        l_shape_correct_1 = cross_entropy_2D(refined_segmentation_1,
+                                                 target=label_l.detach(), weight=segmentation_solver.class_weights)
+                        l_shape_correct = (l_shape_correct + l_shape_correct_1) 
+                    else: l_shape_correct = 0
+                 
+                    RSC_loss = l_rec_reg + l_seg_2+l_seg_reg + l_shape_correct
+                    loss_dict['loss/hard/RSC'] += RSC_loss.item()
+
+                else:
+                    RSC_loss = torch.tensor(0., device=device)
+
+                if mix_style or DSU:
+                    ## perform feature style mixing or style perturbation with noise (DSU) for regularization
+                    assert (mix_style and DSU) is False, 'mix_style and DSU cannot be True at the same time'
+                    if mix_style:
+                        layer_indexes = [1,2,3] ## best results with layer_indexes = [1,2,3]
+                        mix='random'
+                    else:
+                        layer_indexes = [1,2,3,4,5,6] ## best results with layer_indexes = [1,2,3,4,5,6]
+                        mix='gaussian'
+                    aug_z_i, aug_z_s = segmentation_solver.generate_style_augmented_latent_code(
+                        image=image_l, layers_indexes=layer_indexes, p=0.5, lmda=None, mix=mix)
+                    recon_image = segmentation_solver.decoder_inference(decoder=segmentation_solver.model['image_decoder'],
+                                                                latent_code  = aug_z_i, eval=False, disable_track_bn_stats=True)
+
+                    segmentation_logit = segmentation_solver.decoder_inference(decoder=segmentation_solver.model['segmentation_decoder'],
+                                                                latent_code  = aug_z_s, eval=False, disable_track_bn_stats=True)
+
+
+                    l_seg = cross_entropy_2D(segmentation_logit, target=label_l.detach(),
+                                             weight=segmentation_solver.class_weights)
+                    if recon_image is not None:
+                        l_rec = segmentation_solver.compute_image_recon_loss(
+                            recon_image, clean_image_l.detach().clone())
+                    else:
+                        l_rec = 0 * l_seg
+                  
+                    if not 'no_STN' in segmentation_solver.network_type:
+                        refined_predict = segmentation_solver.recon_shape(segmentation_logit, image=image_l, is_label_map=False,recon_image=easy_recon_image,disable_track_bn_stats=True)
+                        l_shape_correct = cross_entropy_2D(refined_predict,
+                                                            target=label_l.detach(), weight=segmentation_solver.class_weights)
+                   
+                    else: l_shape_correct = torch.tensor(0., device=device)
+                    if mix_style: 
+                        mix_style_loss = l_rec + l_seg + l_shape_correct
+                        loss_dict['loss/hard/mix_style'] += mix_style_loss.item()
+                        DSU_loss= torch.tensor(0., device=device)
+                    else:
+                        DSU_loss = l_rec + l_seg + l_shape_correct
+                        loss_dict['loss/hard/DSU'] += DSU_loss.item()
+                        mix_style_loss = torch.tensor(0., device=device)
+                else:
+                    mix_style_loss = torch.tensor(0., device=device)
+                    DSU_loss = torch.tensor(0., device=device)
+                    aug_z_s = None
+                    aug_z_i = None
+                
+                if adv_noise:
+                    ## perform adversarial noise for regularization
+                    augmentor_function = AdvNoise(config_dict={'epsilon':0.1,
+                                                                'xi': 1e-6,
+                                                                'data_size': (clean_image_l.size(0), clean_image_l.size(1), clean_image_l.size(2), clean_image_l.size(3))},
+                                                    debug=False)
+                    divergence_types = ['kl']
+                    divergence_weights = [1.0]
+                    power_iteration = True
+
+                    transformation_chain = [augmentor_function]
+                    segmentation_solver.zero_grad()
+                    segmentation_solver.eval()
+                    adv_solver = ComposeAdversarialTransformSolver(
+                        chain_of_transforms=transformation_chain,
+                        divergence_types=divergence_types,
+                        divergence_weights=divergence_weights,
+                        use_gpu=True,
+                        debug=False,
+                        if_norm_image=True
+                    )
+                    consistency_loss = adv_solver.adversarial_training(
+                        data=clean_image_l, model=segmentation_solver,
+                        init_output = p0.detach().clone(),
+                        n_iter=1,
+                        lazy_load=[False],
+                        optimize_flags=[True], power_iteration=True)
+                    aug_image = adv_solver.adv_data.detach().clone()
+                    torch.cuda.empty_cache()
+                    segmentation_solver.train()
+                    segmentation_solver.zero_grad()
+                    seg_supervised_loss, corrupted_image_recon_loss, shape_recon_loss_2, corrupted_shape_recon_loss = segmentation_solver.hard_example_traininng(perturbed_image=aug_image,
+                                                                                                                                                                 perturbed_seg=None,
+                                                                                                                                                                 clean_image_l=clean_image_l, label_l=label_l,
+                                                                                                                                                                 standard_input_image=image_l.detach().clone(), standard_recon_image=easy_recon_image)
+
+            
+
+                    adv_noise_loss = seg_supervised_loss + corrupted_image_recon_loss + \
+                        shape_recon_loss_2 + corrupted_shape_recon_loss+ consistency_loss
+                    loss_dict['loss/hard/adv_noise'] += adv_noise_loss.item()
+                else:
+                    adv_noise_loss = torch.tensor(0., device=device)
+
+                if adv_bias:
+                    ## MICCAI 2020: adversarial bias for regularization
+                    if dataset_name == 'ACDC':
+                        downscale = 2
+                    else:
+                        downscale = 4
+                    augmentor_function = AdvBias(
+                        config_dict={'epsilon': 0.4,
+                                        'control_point_spacing':
+                                        [clean_image_l.size(2) // 2, clean_image_l.size(3) // 2],
+                                        'downscale': downscale,
+                                        'data_size':
+                                        (clean_image_l.size(0), clean_image_l.size(1),
+                                        clean_image_l.size(2), clean_image_l.size(3)),
+                                        'interpolation_order': 3,
+                                        'init_mode': 'random',
+                                        'space': 'log'}, debug=False)
+                    divergence_types = ['kl', 'contour']
+                    divergence_weights = [1.0, 0.5]
+                    power_iteration = [False]
+
+                    segmentation_solver.zero_grad()
+                    segmentation_solver.eval()
+                    adv_solver = ComposeAdversarialTransformSolver(
+                        chain_of_transforms=[augmentor_function],
+                        divergence_types=divergence_types,
+                        divergence_weights=divergence_weights,
+                        use_gpu=True,
+                        debug=False,
+                        if_norm_image=False
+                    )
+                    consistency_loss = adv_solver.adversarial_training(
+                        data=clean_image_l, model=segmentation_solver,
+                        init_output = p0.detach().clone(),
+                        n_iter=1,
+                        lazy_load=[False],
+                        optimize_flags=[True], power_iteration=power_iteration)
+                    aug_image = adv_solver.adv_data.detach().clone()
+                    torch.cuda.empty_cache()
+                    segmentation_solver.train()
+                    segmentation_solver.zero_grad()
+                    seg_supervised_loss, corrupted_image_recon_loss, shape_recon_loss_2, corrupted_shape_recon_loss = segmentation_solver.hard_example_traininng(perturbed_image=aug_image,
+                                                                                                                                                                 perturbed_seg=None,
+                                                                                                                                                                 clean_image_l=clean_image_l, label_l=label_l,
+                                                                                                                                                                 standard_input_image=image_l.detach().clone(), standard_recon_image=easy_recon_image)
+
+            
+
+                    adv_bias_loss = seg_supervised_loss + corrupted_image_recon_loss + \
+                        shape_recon_loss_2 + corrupted_shape_recon_loss+ consistency_loss
+                    loss_dict['loss/hard/adv_bias'] += adv_bias_loss.item()
+                else:
+                    adv_bias_loss = torch.tensor(0., device=device)
+
+                loss = standard_loss  + LDA_loss + max_style_loss+rand_conv_loss+RSC_loss+mix_style_loss+DSU_loss+adv_noise_loss+adv_bias_loss
                 segmentation_solver.reset_all_optimizers()
                 loss.backward()
                 segmentation_solver.optimize_all_params()
