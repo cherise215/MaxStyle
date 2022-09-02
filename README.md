@@ -8,7 +8,7 @@
 [MICCAI 2022] MaxStyle: Adversarial Style Composition for Robust Medical Image Segmentation
 
 ## Introduction:
-MaxStyle is a novel feature-space data augmentation, which maximizes the effectiveness of style augmentation for model out-of-domain performance. MaxStyle augments data with improved image style diversity and hardness, by expanding the style space with noise and searching for the worst-case style composition of latent features via adversarial training. Below figure highlights the difference between ours style augmentation method and existing works for augmeting style $i$ to $i'$. MaxStyle expands the search space with increased style diversity and increase the hardness of style augmented images via style compositional parameters searching. These parameters are: style interpolation coefficient $\lambda_{mix}\in [0,1]$, style noise related parameters $\epsilon_\gamma \in \mathrm{R}^C$, $\epsilon_\beta \in \mathrm{R}^C$. These learnable parameters are optimized in the direction of maximizing the segmentation loss $\mathcal{L}_{seg}$.  
+MaxStyle is a novel feature-space data augmentation, which maximizes the effectiveness of style augmentation for enhancing model's out-of-domain (OOD) performance. MaxStyle augments data with improved image style diversity and hardness, by augmenting feature via style mixing and style perturbation and searching for the worst-case style composition via adversarial training. Below figure highlights the difference between ours style augmentation method and existing works for augmeting feature style $i$ to $i'$. MaxStyle expands the search space with increased style diversity and increase the hardness of style augmented images via style compositional parameters searching. These parameters are: style interpolation coefficient $\lambda_{mix}\in [0,1]$, style noise related parameters $\epsilon_\gamma \in \mathrm{R}^C$, $\epsilon_\beta \in \mathrm{R}^C$. These learnable parameters are optimized in the direction of maximizing the segmentation loss $\mathcal{L}_{seg}$.  
 
 <img align="center" src="assets/MaxStyle.png" width="750">
 
@@ -24,7 +24,7 @@ Please check out our [Full paper](https://arxiv.org/abs/2206.01737) for more det
 Core implementation can be found at: 
 - MaxStyle layer with learnable paprameters for smart style pertubation: [src/advanced/maxstyle.py](src/advanced/maxstyle.py).
 - An example of an image decoder with MaxStyle layers inserted, see [MyDecoder.apply_max_style](https://github.com/cherise215/MaxStyle/blob/main/src/models/ebm/encoder_decoder.py#L598).
-- Code for generating and optimizing style augmentation at training can be found at [src/models/advanced_triplet_recon_segmentation_model.py](https://github.com/cherise215/MaxStyle/blob/6dcdc5c1cef368f4b6b857738a92620ef425bba5/src/train_adv_supervised_segmentation_triplet.py#L253). 
+- Code for generating and optimizing style augmentation at training can be found at [src/models/advanced_triplet_recon_segmentation_model.py](https://github.com/cherise215/MaxStyle/blob/1bf62b2211b0b7828f53e24440985a8048ef717f/src/models/advanced_triplet_recon_segmentation_model.py#L458). 
 - Main training and testing code: [src/train_adv_supervised_segmentation_triplet.py](src/train_adv_supervised_segmentation_triplet.py) 
 
 ## News:
