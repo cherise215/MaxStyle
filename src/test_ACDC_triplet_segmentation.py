@@ -139,6 +139,7 @@ def evaluate(method_name, segmentation_model, maximum_batch_size, test_dataset_n
              save_predict=False, save_soft_prediction=False, foreground_only=False,intensity_norm_type='min_max'):
     n_iter = segmentation_model.n_iter
     # evaluation settings
+    assert save_report_dir is not None, 'save_report_dir must be specified'
     save_path = save_report_dir + f'/{test_dataset_name}_{str(test_set_ratio)}'
     check_dir(save_path, create=True)
     if 'TTA' in method_name:
@@ -148,7 +149,8 @@ def evaluate(method_name, segmentation_model, maximum_batch_size, test_dataset_n
         summary_report_file_name = 'iter_{}_summary.csv'.format(n_iter)
         detailed_report_file_name = 'iter_{}_detailed.csv'.format(n_iter)
 
-    test_dataset = get_testset(test_dataset_name,test_root_dir=test_root_dir, frames=frames,new_spacing=None,intensity_norm_type=intensity_norm_type)
+    test_dataset = get_testset(test_dataset_name,test_root_dir=test_root_dir, frames=frames,new_spacing=new_spacing,intensity_norm_type=intensity_norm_type)
+    assert test_dataset is not None, 'test_dataset is None'
     tester = TestSegmentationNetwork(test_dataset=test_dataset,
                                      crop_size=crop_size,
                                      maximum_batch_size=maximum_batch_size, segmentation_model=segmentation_model, use_gpu=True,
