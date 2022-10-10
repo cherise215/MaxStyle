@@ -463,7 +463,7 @@ class AdvancedTripletReconSegmentationModel(nn.Module):
                                               mix_learnable=True,
                                               loss_types=['seg'],
                                               loss_weights=[1],
-                                              always_use_beta=False,debug=False):
+                                              always_use_beta=False,debug=False, fix_seed=None):
         """_summary_
         MaxStyle: apply style mixing and noise perturbation to intermediate layers in the decoder, to get style augmented recon images
         support adversararial trainining to optimize the style compositional parameters: lambda, epsilon_gamma, epsilon_bet
@@ -500,6 +500,8 @@ class AdvancedTripletReconSegmentationModel(nn.Module):
             image tensor: style augmented images or recon images
         """
         recon_image = None
+        if fix_seed is not None  and isinstance(fix_seed, int):
+            torch.manual_seed(fix_seed)
         if not len(decoder_layers_indexes) > 0:
            recon_image= self.decoder_inference(decoder_name='image_decoder', latent_code=image_code, disable_track_bn_stats=False)
         else:

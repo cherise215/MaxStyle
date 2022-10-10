@@ -23,17 +23,16 @@ Please check out our [Full paper](https://arxiv.org/abs/2206.01737) for more det
 
 Core implementation can be found at: 
 - MaxStyle layer with learnable paprameters for smart style pertubation: [src/advanced/maxstyle.py](src/advanced/maxstyle.py).
-- An example of an imasge decoder with MaxStyle layers inserted, see [MyDecoder.apply_max_style](https://github.com/cherise215/MaxStyle/blob/main/src/models/ebm/encoder_decoder.py#L598).
+- An example of an image decoder with MaxStyle layers inserted, see [MyDecoder.apply_max_style](https://github.com/cherise215/MaxStyle/blob/main/src/models/ebm/encoder_decoder.py#L598).
 - Code for generating and optimizing style augmentation at training can be found at [src/models/advanced_triplet_recon_segmentation_model.py](https://github.com/cherise215/MaxStyle/blob/1bf62b2211b0b7828f53e24440985a8048ef717f/src/models/advanced_triplet_recon_segmentation_model.py#L458). 
 - Main training and testing code: [src/train_adv_supervised_segmentation_triplet.py](src/train_adv_supervised_segmentation_triplet.py) 
+- Play ground with MaxStyle with different configurations to visualize the process of image generation: [notebooks/vis_hard_example.ipynb](notebooks/vis_hard_example.ipynb)
 
 ## News:
 - [x] MaxStyle training and testing code release [2022-8-23]
 - [x] Baseline methods released [2022-9-1]
+- [x] Added visualization of MaxStyle generated images in Notebooks/vis_hard_example.ipynb
 
-Incoming:
-- [ ] Add jupyter notebook for ease of result analysis
-- [ ] Add visualization of MaxStyle generated images
 
 ## Set Up
 - Git clone this project

@@ -72,18 +72,18 @@ def plot_image(data, ax=None, font_size=12, title="before"):
     return ax
 
 
-def plot_general(data, ax=None, font_size=12, title="", cmap='gray'):
+def plot_general(data, ax=None, font_size=12, title="", cmap='gray', vmin=None, vmax=None):
     '''
     vis image
     2D array
     '''
     if ax is not None:
-        ax.imshow(data, cmap=cmap)
+        ax.imshow(data, cmap=cmap, vmin=vmin, vmax=vmax,interpolation='none')
         ax.set_title(title, size=font_size, weight='bold')
         ax.set_axis_off()
         ax.grid(False)
     else:
-        plt.imshow(data, cmap=cmap)
+        plt.imshow(data, cmap=cmap,vmin=vmin, vmax=vmax,interpolation='none')
         plt.title(title, size=font_size, weight='bold')
         plt.axis('off')
     return ax
