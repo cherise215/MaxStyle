@@ -31,7 +31,7 @@ Core implementation can be found at:
 ## News:
 - [x] MaxStyle training and testing code release [2022-8-23]
 - [x] Baseline methods released [2022-9-1]
-- [x] Added visualization of MaxStyle generated images in Notebooks/vis_hard_example.ipynb
+- [x] Added visualization of MaxStyle generated images in notebooks/vis_hard_example.ipynb [2022-10-10]
 
 
 ## Set Up

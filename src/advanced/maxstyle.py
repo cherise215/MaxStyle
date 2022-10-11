@@ -12,7 +12,7 @@ class MaxStyle(nn.Module):
     """
 
     def __init__(self, batch_size, num_feature, p=0.5, mix_style=True,no_noise=False,
-    mix_learnable=True, noise_learnable=True,always_use_beta=False,alpha=0.1,eps=1e-6,  use_gpu=True, debug=False):
+    mix_learnable=True, noise_learnable=True,always_use_beta=False,alpha=0.1,eps=1e-6,use_gpu=True, debug=False):
         """
         Args:
             batch_size (int): _description_
@@ -51,10 +51,12 @@ class MaxStyle(nn.Module):
         '''
         batch_size  = self.batch_size
         num_feature = self.num_feature
+    
         self.perm = torch.randperm(batch_size) 
         while torch.allclose(self.perm, torch.arange(batch_size)):
             # avoid identical permutation order
-            self.perm = torch.randperm(batch_size)            
+            self.perm = torch.randperm(batch_size)  
+       
         if self.debug: print ('permutation index',self.perm)
 
         self.rand_p = torch.rand(1)
